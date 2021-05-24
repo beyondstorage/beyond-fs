@@ -6,12 +6,13 @@ import (
 	"github.com/beyondstorage/go-service-fs/v3"
 	"github.com/beyondstorage/go-storage/v4/pairs"
 	"go.uber.org/zap"
+	"os"
 )
 
 func main() {
 	logger, _ := zap.NewDevelopment()
 
-	store, err := fs.NewStorager(pairs.WithWorkDir("/tmp/under"))
+	store, err := fs.NewStorager(pairs.WithWorkDir(os.Getenv("BEYONDFS_UNDER_PATH")))
 	if err != nil {
 		logger.Error("new storage", zap.Error(err))
 		return
@@ -22,7 +23,7 @@ func main() {
 			Store:  store,
 			Logger: logger,
 		}),
-		MountPoint: "/tmp/test",
+		MountPoint: os.Getenv("BEYONDFS_MOUNT_PATH"),
 		Logger:     logger,
 	})
 	if err != nil {

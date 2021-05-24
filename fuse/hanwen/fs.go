@@ -279,19 +279,19 @@ func (fs *FS) Rmdir(cancel <-chan struct{}, header *fuse.InHeader, name string) 
 }
 
 func (fs *FS) Rename(cancel <-chan struct{}, input *fuse.RenameIn, oldName string, newName string) (code fuse.Status) {
-	panic("implement me")
+	return fuse.ENOSYS
 }
 
 func (fs *FS) Link(cancel <-chan struct{}, input *fuse.LinkIn, filename string, out *fuse.EntryOut) (code fuse.Status) {
-	panic("implement me")
+	return fuse.ENOSYS
 }
 
 func (fs *FS) Symlink(cancel <-chan struct{}, header *fuse.InHeader, pointedTo string, linkName string, out *fuse.EntryOut) (code fuse.Status) {
-	panic("implement me")
+	return fuse.ENOSYS
 }
 
 func (fs *FS) Readlink(cancel <-chan struct{}, header *fuse.InHeader) (out []byte, code fuse.Status) {
-	panic("implement me")
+	return nil, fuse.ENOSYS
 }
 
 func (fs *FS) Access(cancel <-chan struct{}, input *fuse.AccessIn) (code fuse.Status) {
