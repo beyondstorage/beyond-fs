@@ -72,7 +72,6 @@ func fillEntryOut(i *Inode, out *fuse.EntryOut) fuse.Status {
 	out.Mode = parseMode(i.attr.Mode())
 
 	out.Blocks = (out.Size + 255) / 256
-	out.Blksize = 512
 	out.Nlink = 1
 
 	out.Gid = 1000
@@ -80,6 +79,8 @@ func fillEntryOut(i *Inode, out *fuse.EntryOut) fuse.Status {
 
 	mtime := i.attr.Mtime()
 	out.SetTimes(&mtime, &mtime, &mtime)
+
+	fillEntryOutPlatform(i, out)
 	return fuse.OK
 }
 
@@ -99,6 +100,8 @@ func fillAttrOut(i *Inode, out *fuse.AttrOut) fuse.Status {
 
 	mtime := i.attr.Mtime()
 	out.SetTimes(&mtime, &mtime, &mtime)
+
+	fillAttrOutPlatform(i, out)
 	return fuse.OK
 }
 
