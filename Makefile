@@ -22,7 +22,7 @@ vet:
 
 build: tidy check
 	@echo "build storage"
-	@go build -o bin/aofs ./cmd/aofs
+	@go build -o bin/beyondfs ./cmd/beyondfs
 	@echo "ok"
 
 test:

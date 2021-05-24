@@ -1,3 +1,3 @@
 # go-fs
 
-A high-performance, POSIX-ish File System based on [aos-dev/go-storage](https://github.com/aos-dev/go-storage).
+A high-performance, POSIX-ish File System based on [beyondstorage/go-storage](https://github.com/beyondstorage/go-storage).
