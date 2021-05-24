@@ -92,7 +92,6 @@ func fillAttrOut(i *Inode, out *fuse.AttrOut) fuse.Status {
 	out.Mode = parseMode(i.attr.Mode())
 
 	out.Blocks = (out.Size + 255) / 256
-	out.Blksize = 512
 	out.Nlink = 1
 
 	out.Gid = 1000
