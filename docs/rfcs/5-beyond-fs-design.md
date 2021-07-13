@@ -86,15 +86,25 @@ BeyondFS is designed for these scenarios:
 
 ### Why not maintain metadata?
 
-TODO
+Maintain metadata requires an extra metadata service. The service could be down or broken.
+
+And this enforces the user to read/write data from this service. Data that stores in underlying storage services are not readable for users anymore.
+
+[ByondStorage](https://beyondstorage.io/) focuses on providing cross-cloud data services, intends to build a world that data flows freely. Maintaining metadata in extra services is another form of vendor lock-in, so it doesn't fit our route.
 
 ### Why not focus on a standalone machine?
 
-TODO
+Makes BeyondFS sharable doesn't mean we will sacrifice users that only have a single node. Distributed caching is a natural step forward for BeyondFS.
+
+Users who don't care about distributed cache can use local memory mode without extra cost. For example, users use BeyondFS in thousands of nodes that all of them only write their unique path and don't read other nodes' data.
 
 ### Why not fully POSIX-compatible?
 
-TODO
+It's hard and impossible in our current design.
+
+For example, without separate metadata services and data slicing, it's impossible to implement random write upon s3.
+
+We choose to forgo meeting these limitations in exchange for higher throughput and concurrency performance.
 
 ## Compatibility
 
@@ -102,6 +112,6 @@ Say `Hello, World!` instead.
 
 ## Implementation
 
-Firstly, we will implement a POSIX-ish file system which only cache metadata locally.
+Firstly, we will implement a POSIX-ish file system that only caches metadata locally.
 Then, we will focus on performance improvement including prefetch and cache logic.
 Finally, we will extend our metadata cache logic to other key/value systems.
