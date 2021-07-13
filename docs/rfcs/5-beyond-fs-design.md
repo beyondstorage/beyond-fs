@@ -7,7 +7,7 @@
 
 ## Background
 
-[FUSE](https://en.wikipedia.org/wiki/Filesystem_in_Userspace), a.k.a, Filesystem in Userspace has a wide range of applications in different scenarios, from lightweight data viewing to big data analytics applications for massive amounts of data. FUSE is a bridge that allows users to mount a storage service as local file systems so that the application doesn't need to refactor code.
+[FUSE](https://en.wikipedia.org/wiki/Filesystem_in_Userspace), a.k.a., Filesystem in Userspace has a wide range of applications in different scenarios, from lightweight data viewing to big data analytics applications for massive amounts of data. FUSE is a bridge that allows users to mount a storage service as local file systems so that the application doesn't need to refactor code.
 
 Many filesystems implemented in FUSE already:
 
@@ -102,4 +102,6 @@ Say `Hello, World!` instead.
 
 ## Implementation
 
-TODO
+Firstly, we will implement a POSIX-ish file system which only cache metadata locally.
+Then, we will focus on performance improvement including prefetch and cache logic.
+Finally, we will extend our metadata cache logic to other key/value systems.
