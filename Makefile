@@ -20,9 +20,9 @@ vet:
 	@go vet ./...
 	@echo "ok"
 
-build: tidy check
+build: tidy format check
 	@echo "build storage"
-	@go build -o bin/aofs ./cmd/aofs
+	@go build -o bin/beyondfs ./cmd/beyondfs
 	@echo "ok"
 
 test:
@@ -34,8 +34,3 @@ test:
 tidy:
 	@go mod tidy
 	@go mod verify
-
-clean:
-	@echo "clean generated files"
-	@find . -type f -name 'generated.go' -delete
-	@echo "Done"
