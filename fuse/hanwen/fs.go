@@ -83,7 +83,6 @@ func fillAttrOut(i *vfs.Inode, out *fuse.AttrOut) fuse.Status {
 	out.Ino = i.ID
 	out.Size = i.Size
 	out.Mode = i.Mode
-	out.Mode = i.Mode
 
 	out.Blocks = (out.Size + 255) / 256
 	out.Nlink = 1
