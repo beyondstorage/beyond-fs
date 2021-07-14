@@ -14,7 +14,6 @@ func main() {
 
 	cfg := &vfs.Config{
 		StoragePath: os.Getenv("BEYONDFS_UNDER_PATH"),
-		MetaPath:    os.TempDir(),
 
 		Logger: logger,
 	}

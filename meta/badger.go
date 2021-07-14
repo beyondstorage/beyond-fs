@@ -3,15 +3,15 @@ package meta
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v3"
 )
 
 type badgerDB struct {
 	db *badger.DB
 }
 
-func NewBadger(path string) (Service, error) {
-	db, err := badger.Open(badger.DefaultOptions(path))
+func NewBadger() (Service, error) {
+	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	if err != nil {
 		return nil, fmt.Errorf("new pebble: %w", err)
 	}
@@ -45,7 +45,7 @@ func (db badgerDB) Set(key, value []byte) (err error) {
 	return txn.Commit()
 }
 
-func (db badgerDB) Del(key []byte) (err error) {
+func (db badgerDB) Delete(key []byte) (err error) {
 	txn := db.db.NewTransaction(true)
 	defer txn.Discard()
 
@@ -56,6 +56,26 @@ func (db badgerDB) Del(key []byte) (err error) {
 	return txn.Commit()
 }
 
+func (db badgerDB) PrefixDelete(prefix []byte) (err error) {
+	txn := db.db.NewTransaction(true)
+	defer txn.Discard()
+
+	it := txn.NewIterator(badger.IteratorOptions{
+		Prefix: prefix,
+	})
+	defer it.Close()
+
+	for it.Rewind(); it.Valid(); it.Next() {
+		item := it.Item()
+		err = txn.Delete(item.Key())
+		if err != nil {
+			return err
+		}
+	}
+
+	return txn.Commit()
+}
+
 func (db badgerDB) Scan(prefix []byte) Iterator {
 	txn := db.db.NewTransaction(false)
 	defer txn.Discard()
@@ -63,6 +83,8 @@ func (db badgerDB) Scan(prefix []byte) Iterator {
 	it := txn.NewIterator(badger.IteratorOptions{
 		Prefix: prefix,
 	})
+	it.Rewind()
+
 	return badgerIterator{it: it}
 }
 

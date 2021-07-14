@@ -30,16 +30,22 @@ func (z *Inode) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "ID")
 				return
 			}
+		case "ParentID":
+			z.ParentID, err = dc.ReadUint64()
+			if err != nil {
+				err = msgp.WrapError(err, "ParentID")
+				return
+			}
+		case "Name":
+			z.Name, err = dc.ReadString()
+			if err != nil {
+				err = msgp.WrapError(err, "Name")
+				return
+			}
 		case "Generation":
 			z.Generation, err = dc.ReadUint64()
 			if err != nil {
 				err = msgp.WrapError(err, "Generation")
-				return
-			}
-		case "Ino":
-			z.Ino, err = dc.ReadUint64()
-			if err != nil {
-				err = msgp.WrapError(err, "Ino")
 				return
 			}
 		case "Size":
@@ -85,15 +91,35 @@ func (z *Inode) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Inode) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 8
+	// map header, size 9
 	// write "ID"
-	err = en.Append(0x88, 0xa2, 0x49, 0x44)
+	err = en.Append(0x89, 0xa2, 0x49, 0x44)
 	if err != nil {
 		return
 	}
 	err = en.WriteUint64(z.ID)
 	if err != nil {
 		err = msgp.WrapError(err, "ID")
+		return
+	}
+	// write "ParentID"
+	err = en.Append(0xa8, 0x50, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x49, 0x44)
+	if err != nil {
+		return
+	}
+	err = en.WriteUint64(z.ParentID)
+	if err != nil {
+		err = msgp.WrapError(err, "ParentID")
+		return
+	}
+	// write "Name"
+	err = en.Append(0xa4, 0x4e, 0x61, 0x6d, 0x65)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.Name)
+	if err != nil {
+		err = msgp.WrapError(err, "Name")
 		return
 	}
 	// write "Generation"
@@ -104,16 +130,6 @@ func (z *Inode) EncodeMsg(en *msgp.Writer) (err error) {
 	err = en.WriteUint64(z.Generation)
 	if err != nil {
 		err = msgp.WrapError(err, "Generation")
-		return
-	}
-	// write "Ino"
-	err = en.Append(0xa3, 0x49, 0x6e, 0x6f)
-	if err != nil {
-		return
-	}
-	err = en.WriteUint64(z.Ino)
-	if err != nil {
-		err = msgp.WrapError(err, "Ino")
 		return
 	}
 	// write "Size"
@@ -172,16 +188,19 @@ func (z *Inode) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Inode) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 8
+	// map header, size 9
 	// string "ID"
-	o = append(o, 0x88, 0xa2, 0x49, 0x44)
+	o = append(o, 0x89, 0xa2, 0x49, 0x44)
 	o = msgp.AppendUint64(o, z.ID)
+	// string "ParentID"
+	o = append(o, 0xa8, 0x50, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x49, 0x44)
+	o = msgp.AppendUint64(o, z.ParentID)
+	// string "Name"
+	o = append(o, 0xa4, 0x4e, 0x61, 0x6d, 0x65)
+	o = msgp.AppendString(o, z.Name)
 	// string "Generation"
 	o = append(o, 0xaa, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e)
 	o = msgp.AppendUint64(o, z.Generation)
-	// string "Ino"
-	o = append(o, 0xa3, 0x49, 0x6e, 0x6f)
-	o = msgp.AppendUint64(o, z.Ino)
 	// string "Size"
 	o = append(o, 0xa4, 0x53, 0x69, 0x7a, 0x65)
 	o = msgp.AppendUint64(o, z.Size)
@@ -224,16 +243,22 @@ func (z *Inode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				err = msgp.WrapError(err, "ID")
 				return
 			}
+		case "ParentID":
+			z.ParentID, bts, err = msgp.ReadUint64Bytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "ParentID")
+				return
+			}
+		case "Name":
+			z.Name, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Name")
+				return
+			}
 		case "Generation":
 			z.Generation, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
 				err = msgp.WrapError(err, "Generation")
-				return
-			}
-		case "Ino":
-			z.Ino, bts, err = msgp.ReadUint64Bytes(bts)
-			if err != nil {
-				err = msgp.WrapError(err, "Ino")
 				return
 			}
 		case "Size":
@@ -280,6 +305,6 @@ func (z *Inode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Inode) Msgsize() (s int) {
-	s = 1 + 3 + msgp.Uint64Size + 11 + msgp.Uint64Size + 4 + msgp.Uint64Size + 5 + msgp.Uint64Size + 5 + msgp.Uint32Size + 6 + msgp.TimeSize + 6 + msgp.TimeSize + 6 + msgp.TimeSize
+	s = 1 + 3 + msgp.Uint64Size + 9 + msgp.Uint64Size + 5 + msgp.StringPrefixSize + len(z.Name) + 11 + msgp.Uint64Size + 5 + msgp.Uint64Size + 5 + msgp.Uint32Size + 6 + msgp.TimeSize + 6 + msgp.TimeSize + 6 + msgp.TimeSize
 	return
 }

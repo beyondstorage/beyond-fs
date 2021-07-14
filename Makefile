@@ -27,3 +27,6 @@ test:
 tidy:
 	go mod tidy
 	go mod verify
+
+clean:
+	find . -type f -name '*gen*.go' -delete

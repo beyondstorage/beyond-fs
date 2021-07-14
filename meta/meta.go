@@ -6,7 +6,8 @@ type Service interface {
 	// value will be nil if key not found.
 	Get(key []byte) (value []byte, err error)
 	Set(key, value []byte) (err error)
-	Del(key []byte) (err error)
+	Delete(key []byte) (err error)
+	PrefixDelete(prefix []byte) (err error)
 	Scan(prefix []byte) Iterator
 }
 

@@ -19,7 +19,6 @@ type FS struct {
 
 type Config struct {
 	StoragePath string
-	MetaPath    string
 
 	Logger *zap.Logger
 }
@@ -30,7 +29,7 @@ func NewFS(cfg *Config) (fs *FS, err error) {
 		return nil, err
 	}
 
-	metaSrv, err := meta.NewBadger(cfg.MetaPath)
+	metaSrv, err := meta.NewBadger()
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +50,23 @@ func (fs *FS) DeleteDir(path string) (err error) {
 	panic("implement me")
 }
 
+func (fs *FS) ListInode(id uint64) (err error) {
+	return
+}
+
+func (fs *FS) SetInode(ino *Inode) (err error) {
+	bs, err := ino.MarshalMsg(nil)
+	if err != nil {
+		return fmt.Errorf("marshal inode: %w", err)
+	}
+
+	err = fs.meta.Set(meta.InodeKey(ino.ID), bs)
+	if err != nil {
+		return fmt.Errorf("set inode: %w", err)
+	}
+	return nil
+}
+
 func (fs *FS) GetInode(id uint64) (ino *Inode, err error) {
 	bs, err := fs.meta.Get(meta.InodeKey(id))
 	if err != nil {
@@ -64,13 +80,13 @@ func (fs *FS) GetInode(id uint64) (ino *Inode, err error) {
 
 	_, err = ino.UnmarshalMsg(bs)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("unmarshal inode: %w", err)
 	}
 	return
 }
 
 func (fs *FS) DelInode(id uint64) (err error) {
-	err = fs.meta.Del(meta.InodeKey(id))
+	err = fs.meta.Delete(meta.InodeKey(id))
 	if err != nil {
 		return fmt.Errorf("del inode: %w", err)
 	}
