@@ -59,7 +59,7 @@ func (dh *DirHandle) Next() (ino *Inode, err error) {
 	}
 
 	ino = newInode(dh.ino.ID, o)
-	err = dh.fs.SetInode(ino, time.Minute)
+	err = dh.fs.SetInode(ino, time.Hour)
 	if err != nil {
 		return
 	}

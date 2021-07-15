@@ -73,7 +73,19 @@ func NewFS(cfg *Config) (fs *FS, err error) {
 }
 
 func (fs *FS) Delete(parent uint64, name string) (err error) {
-	panic("implement me")
+	ino, err := fs.GetEntry(parent, name)
+	if err != nil {
+		return
+	}
+	err = fs.s.Delete(ino.Path)
+	if err != nil {
+		return
+	}
+	err = fs.DeleteInode(ino)
+	if err != nil {
+		return
+	}
+	return
 }
 
 func (fs *FS) DeleteDir(path string) (err error) {
@@ -145,8 +157,12 @@ func (fs *FS) GetInode(id uint64) (ino *Inode, err error) {
 	return
 }
 
-func (fs *FS) DeleteInode(id uint64) (err error) {
-	err = fs.meta.Delete(meta.InodeKey(id))
+func (fs *FS) DeleteInode(ino *Inode) (err error) {
+	err = fs.meta.Delete(meta.InodeKey(ino.ID))
+	if err != nil {
+		return fmt.Errorf("del inode: %w", err)
+	}
+	err = fs.meta.Delete(meta.EntryKey(ino.ParentID, ino.Name))
 	if err != nil {
 		return fmt.Errorf("del inode: %w", err)
 	}
