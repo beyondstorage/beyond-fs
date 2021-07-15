@@ -20,6 +20,7 @@ func main() {
 
 	fs, err := vfs.NewFS(cfg)
 	if err != nil {
+		logger.Error("new fs", zap.Error(err))
 		return
 	}
 

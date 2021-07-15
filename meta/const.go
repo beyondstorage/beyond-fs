@@ -7,7 +7,7 @@ var (
 
 	// i:<ino> => Inode
 	inodePrefix = []byte("i:")
-	// d:<ino>:<name> => Inode ID
+	// d:<ino>:<name> => Inode
 	dirPrefix = []byte("d:")
 )
 

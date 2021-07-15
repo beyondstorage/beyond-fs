@@ -2,10 +2,10 @@ package hanwen
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/beyondstorage/go-storage/v4/services"
-	"github.com/beyondstorage/go-storage/v4/types"
 	"github.com/hanwen/go-fuse/v2/fuse"
 	"go.uber.org/zap"
 
@@ -64,7 +64,7 @@ func fillEntryOut(i *vfs.Inode, out *fuse.EntryOut) fuse.Status {
 	out.Generation = 1
 	out.Ino = i.ID
 	out.Size = i.Size
-	out.Mode = i.Mode
+	out.Mode = parseMode(i.Mode)
 
 	out.Blocks = (out.Size + 255) / 256
 	out.Nlink = 1
@@ -82,7 +82,7 @@ func fillAttrOut(i *vfs.Inode, out *fuse.AttrOut) fuse.Status {
 
 	out.Ino = i.ID
 	out.Size = i.Size
-	out.Mode = i.Mode
+	out.Mode = parseMode(i.Mode)
 
 	out.Blocks = (out.Size + 255) / 256
 	out.Nlink = 1
@@ -106,9 +106,10 @@ func parseError(err error) fuse.Status {
 	}
 }
 
-func parseType(o types.ObjectMode) uint32 {
+func parseType(o uint32) uint32 {
+	osMode := os.FileMode(o)
 	var mode uint32
-	if o.IsDir() {
+	if osMode.IsDir() {
 		mode = fuse.S_IFDIR
 	} else {
 		mode = fuse.S_IFREG
@@ -116,9 +117,10 @@ func parseType(o types.ObjectMode) uint32 {
 	return mode
 }
 
-func parseMode(o types.ObjectMode) uint32 {
+func parseMode(o uint32) uint32 {
+	osMode := os.FileMode(o)
 	var mode uint32
-	if o.IsDir() {
+	if osMode.IsDir() {
 		mode = fuse.S_IFDIR | 0755
 	} else {
 		mode = fuse.S_IFREG | 0644
@@ -153,12 +155,15 @@ func (fs *FS) Lookup(cancel <-chan struct{}, header *fuse.InHeader, name string,
 		return fuse.EINVAL
 	}
 
-	panic("implement me")
-
+	node, err := fs.fs.GetEntry(ino.ID, name)
+	if err != nil {
+		return
+	}
+	return fillEntryOut(node, out)
 }
 
 func (fs *FS) Forget(nodeid, nlookup uint64) {
-	fs.fs.DelInode(nodeid)
+	fs.fs.DeleteInode(nodeid)
 }
 
 func (fs *FS) GetAttr(cancel <-chan struct{}, input *fuse.GetAttrIn, out *fuse.AttrOut) (code fuse.Status) {
@@ -223,34 +228,18 @@ func (fs *FS) Unlink(cancel <-chan struct{}, header *fuse.InHeader, name string)
 		return fuse.EINVAL
 	}
 
-	// Implement me
-
-	return fuse.OK
-}
-
-func (fs *FS) Rmdir(cancel <-chan struct{}, header *fuse.InHeader, name string) (code fuse.Status) {
-	ino, err := fs.fs.GetInode(header.NodeId)
+	err = fs.fs.Delete(ino.ID, name)
 	if err != nil {
 		fs.logger.Error("internal error",
 			zap.Error(err))
 		return fuse.EAGAIN
 	}
-	if ino == nil {
-		fs.logger.Error("inode not found",
-			zap.Uint64("inode", header.NodeId))
-		return fuse.ENOENT
-	}
-
-	if !ino.IsDir() {
-		fs.logger.Error("parent inode is not a dir",
-			zap.Uint64("parent", header.NodeId),
-			zap.Uint32("mode", ino.Mode))
-		return fuse.EINVAL
-	}
-
-	// Implement me
 
 	return fuse.OK
+}
+
+func (fs *FS) Rmdir(cancel <-chan struct{}, header *fuse.InHeader, name string) (code fuse.Status) {
+	return fuse.ENOSYS
 }
 
 func (fs *FS) Rename(cancel <-chan struct{}, input *fuse.RenameIn, oldName string, newName string) (code fuse.Status) {
@@ -374,19 +363,101 @@ func (fs *FS) Fallocate(cancel <-chan struct{}, input *fuse.FallocateIn) (code f
 }
 
 func (fs *FS) OpenDir(cancel <-chan struct{}, input *fuse.OpenIn, out *fuse.OpenOut) (status fuse.Status) {
-	panic("implement me")
+	ino, err := fs.fs.GetInode(input.NodeId)
+	if err != nil {
+		fs.logger.Error("internal error",
+			zap.Error(err))
+		return fuse.EAGAIN
+	}
+	if ino == nil {
+		fs.logger.Error("inode not found",
+			zap.Uint64("inode", input.NodeId))
+		return fuse.ENOENT
+	}
+
+	if !ino.IsDir() {
+		fs.logger.Error("parent inode is not a dir",
+			zap.Uint64("parent", input.NodeId),
+			zap.Uint32("mode", ino.Mode))
+		return fuse.EINVAL
+	}
+
+	dh, err := fs.fs.CreateDirHandle(ino)
+	if err != nil {
+		fs.logger.Error("open dir",
+			zap.Uint64("parent", input.NodeId),
+			zap.Error(err))
+		return fuse.EAGAIN
+	}
+
+	out.Fh = dh.ID
+	return fuse.OK
 }
 
 func (fs *FS) ReadDir(cancel <-chan struct{}, input *fuse.ReadIn, out *fuse.DirEntryList) fuse.Status {
-	panic("implement me")
+	dh, err := fs.fs.GetDirHandle(input.Fh)
+	if err != nil {
+		fs.logger.Error("get dir handle", zap.Error(err))
+		return fuse.EAGAIN
+	}
+
+	for {
+		node, err := dh.Next()
+		if err != nil {
+			fs.logger.Error("get next inode", zap.Error(err))
+			return fuse.EAGAIN
+		}
+		if node == nil {
+			break
+		}
+
+		ok := out.AddDirEntry(fuse.DirEntry{
+			Mode: parseMode(node.Mode),
+			Name: node.Name,
+			Ino:  node.ID,
+		})
+		if !ok {
+			break
+		}
+	}
+	return fuse.OK
 }
 
 func (fs *FS) ReadDirPlus(cancel <-chan struct{}, input *fuse.ReadIn, out *fuse.DirEntryList) fuse.Status {
-	panic("implement me")
+	dh, err := fs.fs.GetDirHandle(input.Fh)
+	if err != nil {
+		fs.logger.Error("get dir handle", zap.Error(err))
+		return fuse.EAGAIN
+	}
+
+	for {
+		node, err := dh.Next()
+		if err != nil {
+			fs.logger.Error("get next inode", zap.Error(err))
+			return fuse.EAGAIN
+		}
+		if node == nil {
+			break
+		}
+
+		entry := out.AddDirLookupEntry(fuse.DirEntry{
+			Mode: parseMode(node.Mode),
+			Name: node.Name,
+			Ino:  node.ID,
+		})
+		if entry == nil {
+			break
+		}
+		fillEntryOut(node, entry)
+	}
+	return fuse.OK
 }
 
 func (fs *FS) ReleaseDir(input *fuse.ReleaseIn) {
-	panic("implement me")
+	err := fs.fs.DeleteDirHandle(input.Fh)
+	if err != nil {
+		fs.logger.Error("delete dir handle", zap.Error(err))
+	}
 }
 
 func (fs *FS) FsyncDir(cancel <-chan struct{}, input *fuse.FsyncIn) (code fuse.Status) {
@@ -403,5 +474,4 @@ func (fs *FS) StatFs(cancel <-chan struct{}, input *fuse.InHeader, out *fuse.Sta
 }
 
 func (fs *FS) Init(server *fuse.Server) {
-	panic("implement me")
 }

@@ -36,6 +36,12 @@ func (z *Inode) DecodeMsg(dc *msgp.Reader) (err error) {
 				err = msgp.WrapError(err, "ParentID")
 				return
 			}
+		case "Path":
+			z.Path, err = dc.ReadString()
+			if err != nil {
+				err = msgp.WrapError(err, "Path")
+				return
+			}
 		case "Name":
 			z.Name, err = dc.ReadString()
 			if err != nil {
@@ -91,9 +97,9 @@ func (z *Inode) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Inode) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 9
+	// map header, size 10
 	// write "ID"
-	err = en.Append(0x89, 0xa2, 0x49, 0x44)
+	err = en.Append(0x8a, 0xa2, 0x49, 0x44)
 	if err != nil {
 		return
 	}
@@ -110,6 +116,16 @@ func (z *Inode) EncodeMsg(en *msgp.Writer) (err error) {
 	err = en.WriteUint64(z.ParentID)
 	if err != nil {
 		err = msgp.WrapError(err, "ParentID")
+		return
+	}
+	// write "Path"
+	err = en.Append(0xa4, 0x50, 0x61, 0x74, 0x68)
+	if err != nil {
+		return
+	}
+	err = en.WriteString(z.Path)
+	if err != nil {
+		err = msgp.WrapError(err, "Path")
 		return
 	}
 	// write "Name"
@@ -188,13 +204,16 @@ func (z *Inode) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Inode) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 9
+	// map header, size 10
 	// string "ID"
-	o = append(o, 0x89, 0xa2, 0x49, 0x44)
+	o = append(o, 0x8a, 0xa2, 0x49, 0x44)
 	o = msgp.AppendUint64(o, z.ID)
 	// string "ParentID"
 	o = append(o, 0xa8, 0x50, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x49, 0x44)
 	o = msgp.AppendUint64(o, z.ParentID)
+	// string "Path"
+	o = append(o, 0xa4, 0x50, 0x61, 0x74, 0x68)
+	o = msgp.AppendString(o, z.Path)
 	// string "Name"
 	o = append(o, 0xa4, 0x4e, 0x61, 0x6d, 0x65)
 	o = msgp.AppendString(o, z.Name)
@@ -247,6 +266,12 @@ func (z *Inode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			z.ParentID, bts, err = msgp.ReadUint64Bytes(bts)
 			if err != nil {
 				err = msgp.WrapError(err, "ParentID")
+				return
+			}
+		case "Path":
+			z.Path, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "Path")
 				return
 			}
 		case "Name":
@@ -305,6 +330,6 @@ func (z *Inode) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Inode) Msgsize() (s int) {
-	s = 1 + 3 + msgp.Uint64Size + 9 + msgp.Uint64Size + 5 + msgp.StringPrefixSize + len(z.Name) + 11 + msgp.Uint64Size + 5 + msgp.Uint64Size + 5 + msgp.Uint32Size + 6 + msgp.TimeSize + 6 + msgp.TimeSize + 6 + msgp.TimeSize
+	s = 1 + 3 + msgp.Uint64Size + 9 + msgp.Uint64Size + 5 + msgp.StringPrefixSize + len(z.Path) + 5 + msgp.StringPrefixSize + len(z.Name) + 11 + msgp.Uint64Size + 5 + msgp.Uint64Size + 5 + msgp.Uint32Size + 6 + msgp.TimeSize + 6 + msgp.TimeSize + 6 + msgp.TimeSize
 	return
 }

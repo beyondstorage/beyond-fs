@@ -2,6 +2,7 @@ package meta
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dgraph-io/badger/v3"
 )
@@ -11,7 +12,10 @@ type badgerDB struct {
 }
 
 func NewBadger() (Service, error) {
-	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+	db, err := badger.Open(badger.DefaultOptions("").
+		WithLogger(nil).
+		WithMetricsEnabled(false).
+		WithInMemory(true))
 	if err != nil {
 		return nil, fmt.Errorf("new pebble: %w", err)
 	}
@@ -34,11 +38,20 @@ func (db badgerDB) Get(key []byte) (value []byte, err error) {
 	return v.ValueCopy(nil)
 }
 
-func (db badgerDB) Set(key, value []byte) (err error) {
+func (db badgerDB) Set(key, value []byte, ttl time.Duration) (err error) {
 	txn := db.db.NewTransaction(true)
 	defer txn.Discard()
 
-	err = txn.Set(key, value)
+	e := &badger.Entry{
+		Key:   key,
+		Value: value,
+	}
+
+	if ttl != 0 {
+		e.ExpiresAt = uint64(time.Now().Add(ttl).Unix())
+	}
+
+	err = txn.SetEntry(e)
 	if err != nil {
 		return err
 	}
