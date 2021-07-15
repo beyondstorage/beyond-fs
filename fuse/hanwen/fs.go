@@ -159,6 +159,9 @@ func (fs *FS) Lookup(cancel <-chan struct{}, header *fuse.InHeader, name string,
 	if err != nil {
 		return
 	}
+	if node == nil {
+		return fuse.ENOENT
+	}
 	return fillEntryOut(node, out)
 }
 
