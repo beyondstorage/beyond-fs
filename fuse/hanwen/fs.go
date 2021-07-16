@@ -95,6 +95,11 @@ func fillAttrOut(i *vfs.Inode, out *fuse.AttrOut) fuse.Status {
 	return fuse.OK
 }
 
+func fillOpenOut(fh *vfs.FileHandle, out *fuse.OpenOut) fuse.Status {
+	out.Fh = fh.ID
+	return fuse.OK
+}
+
 func parseError(err error) fuse.Status {
 	switch {
 	case errors.Is(err, services.ErrObjectNotExist):
@@ -303,7 +308,15 @@ func (fs *FS) Create(cancel <-chan struct{}, input *fuse.CreateIn, name string, 
 		return fuse.EINVAL
 	}
 
-	// Implement me
+	i, fh, err := fs.fs.Create(ino.ID, name)
+	if err != nil {
+		fs.logger.Error("create", zap.Error(err))
+		return fuse.EAGAIN
+	}
+	fs.logger.Info("start fill open out")
+	fillOpenOut(fh, &out.OpenOut)
+	fs.logger.Info("start fill entry out")
+	fillEntryOut(i, &out.EntryOut)
 	return fuse.OK
 }
 
@@ -320,7 +333,12 @@ func (fs *FS) Open(cancel <-chan struct{}, input *fuse.OpenIn, out *fuse.OpenOut
 		return fuse.ENOENT
 	}
 
-	panic("implement me")
+	fh, err := fs.fs.CreateFileHandle(ino)
+	if err != nil {
+		fs.logger.Error("create file handle", zap.Error(err))
+		return
+	}
+	return fillOpenOut(fh, out)
 }
 
 func (fs *FS) Read(cancel <-chan struct{}, input *fuse.ReadIn, buf []byte) (fuse.ReadResult, fuse.Status) {
@@ -344,7 +362,12 @@ func (fs *FS) SetLkw(cancel <-chan struct{}, input *fuse.LkIn) (code fuse.Status
 }
 
 func (fs *FS) Release(cancel <-chan struct{}, input *fuse.ReleaseIn) {
-	panic("implement me")
+	err := fs.fs.DeleteFileHandle(input.Fh)
+	if err != nil {
+		fs.logger.Error("release",
+			zap.Uint64("file_handle", input.Fh),
+			zap.Error(err))
+	}
 }
 
 func (fs *FS) Write(cancel <-chan struct{}, input *fuse.WriteIn, data []byte) (written uint32, code fuse.Status) {
@@ -356,7 +379,8 @@ func (fs *FS) CopyFileRange(cancel <-chan struct{}, input *fuse.CopyFileRangeIn)
 }
 
 func (fs *FS) Flush(cancel <-chan struct{}, input *fuse.FlushIn) fuse.Status {
-	panic("implement me")
+	// FIXME: maybe we need to write data here.
+	return fuse.OK
 }
 
 func (fs *FS) Fsync(cancel <-chan struct{}, input *fuse.FsyncIn) (code fuse.Status) {

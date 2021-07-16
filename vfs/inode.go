@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"fmt"
 	"github.com/beyondstorage/go-storage/v4/types"
 	"os"
 	"path"
@@ -25,6 +26,13 @@ type Inode struct {
 
 func (ino *Inode) IsDir() bool {
 	return ino.Mode&uint32(os.ModeDir) != 0
+}
+
+func (ino *Inode) GetEntryPath(name string) string {
+	if ino.Path == "" {
+		return name
+	}
+	return fmt.Sprintf("%s/%s", ino.Path, name)
 }
 
 func newInode(parent uint64, o *types.Object) *Inode {
