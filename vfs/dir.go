@@ -5,7 +5,6 @@ import (
 	"github.com/beyondstorage/beyond-fs/meta"
 	"github.com/beyondstorage/go-storage/v4/types"
 	"sync"
-	"time"
 )
 
 type dirHandleMap struct {
@@ -58,8 +57,9 @@ func (dh *DirHandle) Next() (ino *Inode, err error) {
 		return nil, err
 	}
 
+	// TODO: maybe we can read data from cache instead.
 	ino = newInode(dh.ino.ID, o)
-	err = dh.fs.SetInode(ino, time.Hour)
+	err = dh.fs.SetInode(ino)
 	if err != nil {
 		return
 	}

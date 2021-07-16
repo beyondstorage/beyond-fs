@@ -2,7 +2,6 @@ package meta
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/dgraph-io/badger/v3"
 )
@@ -38,17 +37,13 @@ func (db badgerDB) Get(key []byte) (value []byte, err error) {
 	return v.ValueCopy(nil)
 }
 
-func (db badgerDB) Set(key, value []byte, ttl time.Duration) (err error) {
+func (db badgerDB) Set(key, value []byte) (err error) {
 	txn := db.db.NewTransaction(true)
 	defer txn.Discard()
 
 	e := &badger.Entry{
 		Key:   key,
 		Value: value,
-	}
-
-	if ttl != 0 {
-		e.ExpiresAt = uint64(time.Now().Add(ttl).Unix())
 	}
 
 	err = txn.SetEntry(e)
