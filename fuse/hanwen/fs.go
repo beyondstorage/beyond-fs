@@ -161,8 +161,12 @@ func (fs *FS) Lookup(cancel <-chan struct{}, header *fuse.InHeader, name string,
 	}
 
 	node, err := fs.fs.GetEntry(ino.ID, name)
+	if err != nil && errors.Is(err, services.ErrObjectNotExist) {
+		return fuse.ENOENT
+	}
 	if err != nil {
-		return
+		fs.logger.Error("get entry", zap.Error(err))
+		return fuse.EAGAIN
 	}
 	if node == nil {
 		return fuse.ENOENT
@@ -342,7 +346,19 @@ func (fs *FS) Open(cancel <-chan struct{}, input *fuse.OpenIn, out *fuse.OpenOut
 }
 
 func (fs *FS) Read(cancel <-chan struct{}, input *fuse.ReadIn, buf []byte) (fuse.ReadResult, fuse.Status) {
-	panic("implement me")
+	fh, err := fs.fs.GetFileHandle(input.Fh)
+	if err != nil {
+		fs.logger.Error("get file handle", zap.Error(err))
+		return nil, fuse.EAGAIN
+	}
+
+	n, err := fh.Read(input.Offset, buf)
+	if err != nil {
+		fs.logger.Error("read", zap.Error(err))
+		return nil, fuse.EAGAIN
+	}
+	return fuse.ReadResultData(buf[:n]), fuse.OK
+
 }
 
 func (fs *FS) Lseek(cancel <-chan struct{}, in *fuse.LseekIn, out *fuse.LseekOut) fuse.Status {

@@ -1,9 +1,17 @@
 package vfs
 
 import (
+	"go.uber.org/zap"
 	"sync"
 
+	"github.com/Xuanwo/go-bufferpool"
+	"github.com/beyondstorage/go-storage/v4/pairs"
+
 	"github.com/beyondstorage/beyond-fs/meta"
+)
+
+var (
+	fileBufPool = bufferpool.New(4 * 1024 * 1024)
 )
 
 type fileHandleMap struct {
@@ -44,4 +52,41 @@ type FileHandle struct {
 	ino  *Inode
 	fs   *FS
 	meta meta.Service
+
+	mu     sync.Mutex
+	buf    *bufferpool.Buffer
+	size   uint64
+	offset uint64
+}
+
+func (fh *FileHandle) GetInode() *Inode {
+	return fh.ino
+}
+
+func (fh *FileHandle) Read(offset uint64, buf []byte) (n int, err error) {
+	size := fh.size
+	if size > uint64(len(buf)) {
+		size = uint64(len(buf))
+	}
+
+	fh.mu.Lock()
+	defer fh.mu.Unlock()
+
+	fh.buf.Reset()
+
+	fh.fs.logger.Info("read data",
+		zap.String("path", fh.ino.Path),
+		zap.Uint64("offset", offset),
+		zap.Uint64("size", size))
+	byteRead, err := fh.fs.s.Read(fh.ino.Path, fh.buf,
+		pairs.WithOffset(int64(offset)),
+		pairs.WithSize(int64(size)))
+	if err != nil {
+		fh.fs.logger.Error("read underlying", zap.Error(err))
+		return
+	}
+
+	copy(buf, fh.buf.Bytes()[:byteRead])
+	fh.offset += uint64(byteRead)
+	return int(byteRead), nil
 }
