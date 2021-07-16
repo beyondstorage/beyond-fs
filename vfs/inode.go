@@ -2,10 +2,11 @@ package vfs
 
 import (
 	"fmt"
-	"github.com/beyondstorage/go-storage/v4/types"
 	"os"
 	"path"
 	"time"
+
+	"github.com/beyondstorage/go-storage/v4/types"
 )
 
 //go:generate go run github.com/tinylib/msgp
