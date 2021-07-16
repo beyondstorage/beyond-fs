@@ -2,6 +2,7 @@ package vfs
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"time"
 
@@ -128,6 +129,34 @@ func (fs *FS) Delete(parent uint64, name string) (err error) {
 	return
 }
 
+func (fs *FS) Stat(parent uint64, name string) (ino *Inode, err error) {
+	p, err := fs.GetInode(parent)
+	if err != nil {
+		return
+	}
+
+	path := p.GetEntryPath(name)
+	o, err := fs.s.Stat(path)
+	if err != nil && errors.Is(err, services.ErrObjectNotExist) {
+		// FIXME: we need to use stat with ModeDir instead.
+		o, err = fs.s.Stat(path + "/")
+		if err != nil {
+			return nil, err
+		}
+		o.Path = path
+		o.Mode = types.ModeDir
+	}
+	if err != nil {
+		return nil, err
+	}
+	ino = newInode(p.ID, o)
+	err = fs.SetInode(ino)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (fs *FS) DeleteDir(path string) (err error) {
 	panic("implement me")
 }
@@ -138,6 +167,10 @@ func (fs *FS) CreateFileHandle(ino *Inode) (fh *FileHandle, err error) {
 		ino:  ino,
 		fs:   fs,
 		meta: fs.meta,
+
+		buf:    fileBufPool.Get(),
+		size:   ino.Size,
+		offset: 0,
 	}
 	fs.fhm.Set(fh.ID, fh)
 	return fh, nil
@@ -239,7 +272,8 @@ func (fs *FS) GetEntry(parent uint64, name string) (ino *Inode, err error) {
 		return nil, fmt.Errorf("get entry: %w", err)
 	}
 	if bs == nil {
-		return nil, nil
+		// Try get from underlying storage
+		return fs.Stat(parent, name)
 	}
 
 	ino = &Inode{}
