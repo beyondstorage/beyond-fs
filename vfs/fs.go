@@ -1,7 +1,9 @@
 package vfs
 
 import (
+	"bytes"
 	"fmt"
+	"time"
 
 	_ "github.com/beyondstorage/go-service-fs/v3"
 	_ "github.com/beyondstorage/go-service-s3/v2"
@@ -32,6 +34,7 @@ type FS struct {
 	meta meta.Service
 
 	dhm    *dirHandleMap
+	fhm    *fileHandleMap
 	logger *zap.Logger
 }
 
@@ -57,6 +60,7 @@ func NewFS(cfg *Config) (fs *FS, err error) {
 		meta: metaSrv,
 
 		dhm:    newDirHandleMap(),
+		fhm:    newFileHandleMap(),
 		logger: cfg.Logger,
 	}
 
@@ -69,6 +73,39 @@ func NewFS(cfg *Config) (fs *FS, err error) {
 		return nil, err
 	}
 	return fs, err
+}
+
+func (fs *FS) Create(parent uint64, name string) (ino *Inode, fh *FileHandle, err error) {
+	// FIXME: we need to handle file exists.
+	p, err := fs.GetInode(parent)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	path := p.GetEntryPath(name)
+	_, err = fs.s.Write(path, bytes.NewReader([]byte{}), 0)
+	if err != nil {
+		fs.logger.Error("write", zap.String("path", path), zap.Error(err))
+		return nil, nil, err
+	}
+
+	o := fs.s.Create(path)
+	o.Path = path
+	o.Mode = types.ModeRead
+	o.SetContentLength(0)
+	o.SetLastModified(time.Now())
+
+	ino = newInode(parent, o)
+	err = fs.SetInode(ino)
+	if err != nil {
+		return
+	}
+
+	fh, err = fs.CreateFileHandle(ino)
+	if err != nil {
+		return
+	}
+	return
 }
 
 func (fs *FS) Delete(parent uint64, name string) (err error) {
@@ -93,6 +130,26 @@ func (fs *FS) Delete(parent uint64, name string) (err error) {
 
 func (fs *FS) DeleteDir(path string) (err error) {
 	panic("implement me")
+}
+
+func (fs *FS) CreateFileHandle(ino *Inode) (fh *FileHandle, err error) {
+	fh = &FileHandle{
+		ID:   NextHandle(),
+		ino:  ino,
+		fs:   fs,
+		meta: fs.meta,
+	}
+	fs.fhm.Set(fh.ID, fh)
+	return fh, nil
+}
+
+func (fs *FS) GetFileHandle(fhid uint64) (fh *FileHandle, err error) {
+	return fs.fhm.Get(fhid), nil
+}
+
+func (fs *FS) DeleteFileHandle(fhid uint64) (err error) {
+	fs.fhm.Delete(fhid)
+	return nil
 }
 
 func (fs *FS) CreateDirHandle(ino *Inode) (dh *DirHandle, err error) {

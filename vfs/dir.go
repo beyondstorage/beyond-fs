@@ -2,9 +2,11 @@ package vfs
 
 import (
 	"errors"
-	"github.com/beyondstorage/beyond-fs/meta"
-	"github.com/beyondstorage/go-storage/v4/types"
 	"sync"
+
+	"github.com/beyondstorage/go-storage/v4/types"
+
+	"github.com/beyondstorage/beyond-fs/meta"
 )
 
 type dirHandleMap struct {
