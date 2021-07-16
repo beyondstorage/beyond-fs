@@ -3,7 +3,6 @@ package meta
 import (
 	"bytes"
 	"testing"
-	"time"
 )
 
 func BenchmarkGet(b *testing.B) {
@@ -16,7 +15,7 @@ func BenchmarkGet(b *testing.B) {
 	key := bytes.Repeat([]byte{'a'}, 128)
 	value := bytes.Repeat([]byte{'a'}, 1024)
 
-	err = srv.Set(key, value, time.Hour)
+	err = srv.Set(key, value)
 	if err != nil {
 		b.Error(err)
 		return
@@ -38,6 +37,6 @@ func BenchmarkSet(b *testing.B) {
 	value := bytes.Repeat([]byte{'a'}, 1024)
 
 	for i := 0; i < b.N; i++ {
-		_ = srv.Set(key, value, time.Hour)
+		_ = srv.Set(key, value)
 	}
 }

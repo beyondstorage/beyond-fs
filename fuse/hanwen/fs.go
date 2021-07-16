@@ -166,6 +166,10 @@ func (fs *FS) Lookup(cancel <-chan struct{}, header *fuse.InHeader, name string,
 }
 
 func (fs *FS) Forget(nodeid, nlookup uint64) {
+	err := fs.fs.DeleteInodeByID(nodeid)
+	if err != nil {
+		fs.logger.Error("forget", zap.Error(err))
+	}
 }
 
 func (fs *FS) GetAttr(cancel <-chan struct{}, input *fuse.GetAttrIn, out *fuse.AttrOut) (code fuse.Status) {
