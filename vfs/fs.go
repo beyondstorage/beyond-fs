@@ -7,6 +7,7 @@ import (
 	"time"
 
 	_ "github.com/beyondstorage/go-service-fs/v3"
+	_ "github.com/beyondstorage/go-service-memory"
 	_ "github.com/beyondstorage/go-service-s3/v2"
 	"github.com/beyondstorage/go-storage/v4/pairs"
 	"github.com/beyondstorage/go-storage/v4/services"
@@ -31,8 +32,9 @@ func NextHandle() uint64 {
 }
 
 type FS struct {
-	s    types.Storager
-	meta meta.Service
+	s     types.Storager
+	cache *Cache
+	meta  meta.Service
 
 	dhm    *dirHandleMap
 	fhm    *fileHandleMap
@@ -51,19 +53,29 @@ func NewFS(cfg *Config) (fs *FS, err error) {
 		return nil, err
 	}
 
+	cacheStore, err := services.NewStoragerFromString("memory://")
+	if err != nil {
+		return nil, err
+	}
+
 	metaSrv, err := meta.NewBadger()
 	if err != nil {
 		return nil, err
 	}
 
 	fs = &FS{
-		s:    store,
-		meta: metaSrv,
+		s: store,
+		// TODO: we will support other service as cache later.
+		cache: NewCache(store, cacheStore, cfg.Logger),
+		meta:  metaSrv,
 
 		dhm:    newDirHandleMap(),
 		fhm:    newFileHandleMap(),
 		logger: cfg.Logger,
 	}
+
+	// Start cache service.
+	go fs.cache.Start()
 
 	o := types.NewObject(nil, true)
 	o.ID = store.Metadata().WorkDir
@@ -163,10 +175,11 @@ func (fs *FS) DeleteDir(path string) (err error) {
 
 func (fs *FS) CreateFileHandle(ino *Inode) (fh *FileHandle, err error) {
 	fh = &FileHandle{
-		ID:   NextHandle(),
-		ino:  ino,
-		fs:   fs,
-		meta: fs.meta,
+		ID:    NextHandle(),
+		ino:   ino,
+		fs:    fs,
+		meta:  fs.meta,
+		cache: fs.cache,
 
 		buf:    fileBufPool.Get(),
 		size:   ino.Size,
@@ -181,6 +194,14 @@ func (fs *FS) GetFileHandle(fhid uint64) (fh *FileHandle, err error) {
 }
 
 func (fs *FS) DeleteFileHandle(fhid uint64) (err error) {
+	fh := fs.fhm.Get(fhid)
+	if fh == nil {
+		return nil
+	}
+	err = fh.CloseForWrite()
+	if err != nil {
+		return
+	}
 	fs.fhm.Delete(fhid)
 	return nil
 }

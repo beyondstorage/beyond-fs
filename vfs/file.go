@@ -1,11 +1,12 @@
 package vfs
 
 import (
-	"go.uber.org/zap"
+	"fmt"
 	"sync"
 
 	"github.com/Xuanwo/go-bufferpool"
 	"github.com/beyondstorage/go-storage/v4/pairs"
+	"go.uber.org/zap"
 
 	"github.com/beyondstorage/beyond-fs/meta"
 )
@@ -49,14 +50,20 @@ func (fhm *fileHandleMap) Delete(id uint64) {
 type FileHandle struct {
 	ID uint64
 
-	ino  *Inode
-	fs   *FS
-	meta meta.Service
+	ino   *Inode
+	fs    *FS
+	meta  meta.Service
+	cache *Cache
 
 	mu     sync.Mutex
-	buf    *bufferpool.Buffer
 	size   uint64
 	offset uint64
+
+	// Read operations
+	buf *bufferpool.Buffer
+
+	// Write operations
+	idx uint64
 }
 
 func (fh *FileHandle) GetInode() *Inode {
@@ -89,4 +96,45 @@ func (fh *FileHandle) Read(offset uint64, buf []byte) (n int, err error) {
 	copy(buf, fh.buf.Bytes()[:byteRead])
 	fh.offset += uint64(byteRead)
 	return int(byteRead), nil
+}
+
+func (fh *FileHandle) PrepareForWrite() (err error) {
+	err = fh.cache.startWrite(fh.ID, fh.ino.Path)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (fh *FileHandle) Write(offset uint64, buf []byte) (n int, err error) {
+	fh.mu.Lock()
+	defer fh.mu.Unlock()
+
+	if offset != fh.offset {
+		return 0, fmt.Errorf("random write is not allowd")
+	}
+
+	fh.fs.logger.Info("write data",
+		zap.String("path", fh.ino.Path),
+		zap.Uint64("offset", offset),
+		zap.Int("size", len(buf)))
+	byteWritten, err := fh.cache.write(fh.ID, fh.idx, buf)
+	if err != nil {
+		fh.fs.logger.Error("write buffer", zap.Error(err))
+		return
+	}
+
+	fh.idx += 1
+	fh.size += uint64(byteWritten)
+	fh.offset += uint64(byteWritten)
+
+	return int(byteWritten), nil
+}
+
+func (fh *FileHandle) CloseForWrite() (err error) {
+	err = fh.cache.endWrite(fh.ID)
+	if err != nil {
+		return
+	}
+	return
 }
