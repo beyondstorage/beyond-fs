@@ -2,6 +2,7 @@ package hanwen
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -341,6 +342,12 @@ func (fs *FS) Open(cancel <-chan struct{}, input *fuse.OpenIn, out *fuse.OpenOut
 	if err != nil {
 		fs.logger.Error("create file handle", zap.Error(err))
 		return
+	}
+	if input.Flags&uint32(os.O_WRONLY) != 0 {
+		err = fh.PrepareForWrite()
+		if err != nil {
+			panic(fmt.Errorf("prepare for write: %v", err))
+		}
 	}
 	return fillOpenOut(fh, out)
 }

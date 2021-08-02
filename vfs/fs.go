@@ -74,6 +74,9 @@ func NewFS(cfg *Config) (fs *FS, err error) {
 		logger: cfg.Logger,
 	}
 
+	// Start cache service.
+	go fs.cache.Start()
+
 	o := types.NewObject(nil, true)
 	o.ID = store.Metadata().WorkDir
 	o.Path = ""
@@ -172,10 +175,11 @@ func (fs *FS) DeleteDir(path string) (err error) {
 
 func (fs *FS) CreateFileHandle(ino *Inode) (fh *FileHandle, err error) {
 	fh = &FileHandle{
-		ID:   NextHandle(),
-		ino:  ino,
-		fs:   fs,
-		meta: fs.meta,
+		ID:    NextHandle(),
+		ino:   ino,
+		fs:    fs,
+		meta:  fs.meta,
+		cache: fs.cache,
 
 		buf:    fileBufPool.Get(),
 		size:   ino.Size,

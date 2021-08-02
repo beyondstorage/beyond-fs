@@ -107,6 +107,9 @@ func (fh *FileHandle) PrepareForWrite() (err error) {
 }
 
 func (fh *FileHandle) Write(offset uint64, buf []byte) (n int, err error) {
+	fh.mu.Lock()
+	defer fh.mu.Unlock()
+
 	if offset != fh.offset {
 		return 0, fmt.Errorf("random write is not allowd")
 	}
@@ -120,6 +123,10 @@ func (fh *FileHandle) Write(offset uint64, buf []byte) (n int, err error) {
 		fh.fs.logger.Error("write buffer", zap.Error(err))
 		return
 	}
+
+	fh.idx += 1
+	fh.size += uint64(byteWritten)
+	fh.offset += uint64(byteWritten)
 
 	return int(byteWritten), nil
 }
