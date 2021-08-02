@@ -358,7 +358,6 @@ func (fs *FS) Read(cancel <-chan struct{}, input *fuse.ReadIn, buf []byte) (fuse
 		return nil, fuse.EAGAIN
 	}
 	return fuse.ReadResultData(buf[:n]), fuse.OK
-
 }
 
 func (fs *FS) Lseek(cancel <-chan struct{}, in *fuse.LseekIn, out *fuse.LseekOut) fuse.Status {
@@ -387,7 +386,18 @@ func (fs *FS) Release(cancel <-chan struct{}, input *fuse.ReleaseIn) {
 }
 
 func (fs *FS) Write(cancel <-chan struct{}, input *fuse.WriteIn, data []byte) (written uint32, code fuse.Status) {
-	panic("implement me")
+	fh, err := fs.fs.GetFileHandle(input.Fh)
+	if err != nil {
+		fs.logger.Error("get file handle", zap.Error(err))
+		return 0, fuse.EAGAIN
+	}
+
+	n, err := fh.Write(input.Offset, data)
+	if err != nil {
+		fs.logger.Error("read", zap.Error(err))
+		return uint32(n), fuse.EAGAIN
+	}
+	return uint32(n), fuse.OK
 }
 
 func (fs *FS) CopyFileRange(cancel <-chan struct{}, input *fuse.CopyFileRangeIn) (written uint32, code fuse.Status) {
