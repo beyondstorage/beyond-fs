@@ -13,7 +13,7 @@ require (
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/tinylib/msgp v1.1.6
-	go.uber.org/atomic v1.7.0
+	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.18.1
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
