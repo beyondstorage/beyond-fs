@@ -2,11 +2,11 @@ package vfs
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"sync"
 
 	"github.com/Xuanwo/go-bufferpool"
 	"github.com/beyondstorage/go-storage/v4/pairs"
+	"go.uber.org/zap"
 
 	"github.com/beyondstorage/beyond-fs/meta"
 )

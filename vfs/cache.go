@@ -3,11 +3,12 @@ package vfs
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"sync"
+
 	"github.com/beyondstorage/go-storage/v4/types"
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
-	"io"
-	"sync"
 )
 
 type op struct {
