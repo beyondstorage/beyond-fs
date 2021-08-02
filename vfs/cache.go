@@ -24,7 +24,7 @@ type chunk struct {
 	path          string
 	persistedIdx  uint64
 	persistedSize int64
-	currentIdx    uint64
+	nextIdx       uint64
 	currentSize   int64
 
 	// If we have CreateMultipart or CreateAppend, we will store the object here.
@@ -36,9 +36,10 @@ type chunk struct {
 	nextPartNumber int
 }
 
-func newChunk(path string) *chunk {
+func newChunk(fd uint64, path string) *chunk {
 	return &chunk{
 		wg:   &sync.WaitGroup{},
+		fd:   fd,
 		path: path,
 	}
 }
@@ -80,7 +81,7 @@ func (c *Cache) Start() {
 		c.chunkLock.Unlock()
 
 		chk.lock.Lock()
-		chk.currentIdx += 1
+		chk.nextIdx += 1
 		chk.currentSize += v.size
 		chk.lock.Unlock()
 
@@ -89,26 +90,24 @@ func (c *Cache) Start() {
 			continue
 		}
 
-		// Start multipart.
+		chk.lock.Lock()
+
 		if chk.object == nil {
 			o, err := c.s.(types.Multiparter).CreateMultipart(chk.path)
 			if err != nil {
 				c.logger.Fatal("create multipart", zap.Error(err))
 			}
 
-			chk.lock.Lock()
 			chk.object = o
 			chk.parts = make(map[int]*types.Part)
-			chk.lock.Unlock()
 		}
 
-		chk.lock.Lock()
 		start := chk.persistedIdx
-		end := chk.currentIdx
-		size := chk.persistedSize - chk.currentSize
+		end := chk.nextIdx
+		size := chk.currentSize - chk.persistedSize
 		partNumber := chk.nextPartNumber
 		chk.persistedSize = chk.currentSize
-		chk.persistedIdx = chk.currentIdx
+		chk.persistedIdx = chk.nextIdx
 		chk.nextPartNumber += 1
 		chk.lock.Unlock()
 
@@ -132,7 +131,7 @@ func (c *Cache) complete(chk *chunk) error {
 	// We can persist it via write.
 	if chk.object == nil {
 		start := uint64(0)
-		end := chk.currentIdx
+		end := chk.nextIdx
 		size := chk.currentSize
 
 		return c.persistViaWrite(chk, start, end, size)
@@ -140,23 +139,31 @@ func (c *Cache) complete(chk *chunk) error {
 
 	// Check for dirty data.
 	//
-	// persistedIdx < currentIdx means we still have data to write.
-	if chk.persistedIdx < chk.currentIdx {
+	// persistedIdx < nextIdx means we still have data to write.
+	if chk.persistedIdx < chk.nextIdx {
 		start := chk.persistedIdx
-		end := chk.currentIdx
-		size := chk.persistedSize - chk.currentSize
+		end := chk.nextIdx
+		size := chk.currentSize - chk.persistedSize
 		partNumber := chk.nextPartNumber
 
-		err := c.persistViaWriteMultipart(chk, start, end, size, partNumber)
+		chk.wg.Add(1)
+		err := c.p.Submit(func() {
+			defer chk.wg.Done()
+
+			err := c.persistViaWriteMultipart(chk, start, end, size, partNumber)
+			if err != nil {
+				c.logger.Error("persistViaWriteMultipart", zap.Error(err))
+			}
+		})
 		if err != nil {
-			return err
+			c.logger.Fatal("submit task", zap.Error(err))
 		}
 	}
 
 	// It's safe to complete the multipart after wait.
 	chk.wg.Wait()
 
-	parts := make([]*types.Part, len(chk.parts))
+	parts := make([]*types.Part, 0, len(chk.parts))
 	for i := 0; i < len(chk.parts); i++ {
 		parts = append(parts, chk.parts[i])
 	}
@@ -215,7 +222,7 @@ func (c *Cache) persistViaWriteMultipart(chk *chunk, start, end uint64, size int
 	}
 
 	chk.lock.Lock()
-	chk.parts[chk.nextPartNumber] = part
+	chk.parts[partNumber] = part
 	chk.lock.Unlock()
 	return nil
 }
@@ -224,7 +231,7 @@ func (c *Cache) read(fd, start, end uint64) (r io.ReadCloser, err error) {
 	r, w := io.Pipe()
 
 	go func() {
-		for i := start; i <= end; i++ {
+		for i := start; i < end; i++ {
 			p := fmt.Sprintf("%d-%d", fd, i)
 			_, err := c.c.Read(p, w)
 			if err != nil {
@@ -245,7 +252,7 @@ func (c *Cache) read(fd, start, end uint64) (r io.ReadCloser, err error) {
 func (c *Cache) startWrite(fd uint64, path string) (err error) {
 	c.chunkLock.Lock()
 	// FIXME: maybe we need to check the fd before set.
-	c.chunks[fd] = newChunk(path)
+	c.chunks[fd] = newChunk(fd, path)
 	c.chunkLock.Unlock()
 	return nil
 }
