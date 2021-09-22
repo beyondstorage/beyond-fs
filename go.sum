@@ -9,10 +9,14 @@ github.com/Xuanwo/templateutils v0.1.0/go.mod h1:OdE0DJ+CJxDBq6psX5DPV+gOZi8bhuH
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/aws/aws-sdk-go v1.40.1 h1:MlWasxqPLnFKZLPdEFzlEtzIdV7044o44YILe6A9zys=
 github.com/aws/aws-sdk-go v1.40.1/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
+github.com/aws/aws-sdk-go v1.40.36 h1:EO6+pvuNlZwXi4qtUHYQRB10vH9Hq6fHC8nZHiPpRDI=
+github.com/aws/aws-sdk-go v1.40.36/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beyondstorage/go-endpoint v1.0.1 h1:F8x2dGLMu9je6g7zPbKoxCXDlug97K26SeCx7KEHgyg=
 github.com/beyondstorage/go-endpoint v1.0.1/go.mod h1:P2hknaGrziOJJKySv/XnAiVw/d3v12/LZu2gSxEx4nM=
+github.com/beyondstorage/go-endpoint v1.1.0 h1:cpjmQdrAMyaLoT161NIFU/eXcsuMI3xViycid5/mBZg=
+github.com/beyondstorage/go-endpoint v1.1.0/go.mod h1:P2hknaGrziOJJKySv/XnAiVw/d3v12/LZu2gSxEx4nM=
 github.com/beyondstorage/go-integration-test/v4 v4.2.0/go.mod h1:jLyYWSGUjQRH7U1HdaLbXE5sxBgqrtK73q+Q7PGIuSs=
 github.com/beyondstorage/go-integration-test/v4 v4.3.0/go.mod h1:HKgzemQZpxoHBL49JYEUnLTb5eteUhzcvmmPL7EDT/Y=
 github.com/beyondstorage/go-integration-test/v4 v4.4.0/go.mod h1:o0pHhyaRR/OO6QxnRqWW3aFjTycBZjoKSdHKN/JZRjo=
@@ -22,6 +26,8 @@ github.com/beyondstorage/go-service-memory v0.3.0 h1:T5d+oJXs4WPp5qTDwbNk23SZfsN
 github.com/beyondstorage/go-service-memory v0.3.0/go.mod h1:m5vYYzOQNflKJNGkzxi+LHy6mvIN/zSyUSovCn+9tCk=
 github.com/beyondstorage/go-service-s3/v2 v2.3.0 h1:mCdCuGmQ/26A1Xhj9tnFcRy3bXf1h5MT/TyFrJW8CAI=
 github.com/beyondstorage/go-service-s3/v2 v2.3.0/go.mod h1:B4gLy8g/uhjkLkVymkRES/tIKH2UhB0zmkzqzGaN5LU=
+github.com/beyondstorage/go-service-s3/v2 v2.4.0 h1:3Q3qvT4GIOf6sGka7qcKlTlFqrPyUZFe72GOOAoOKAs=
+github.com/beyondstorage/go-service-s3/v2 v2.4.0/go.mod h1:PwASI5RcE+2YXGTKSmtluHSy7R4l/P46mZDa7UGqG4U=
 github.com/beyondstorage/go-storage/v4 v4.3.0/go.mod h1:0fdcRCzLKMQe7Ve4zPlyTGgoPYwuINiV79Gx9tCt9tQ=
 github.com/beyondstorage/go-storage/v4 v4.3.2/go.mod h1:8FHjTUFuwLl/mmIGpOL9g3RTZPyye7vneFN/JkRj5Tg=
 github.com/beyondstorage/go-storage/v4 v4.4.0/go.mod h1:mc9VzBImjXDg1/1sLfta2MJH79elfM6m47ZZvZ+q/Uw=
