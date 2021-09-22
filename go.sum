@@ -16,8 +16,6 @@ github.com/beyondstorage/go-endpoint v1.0.1/go.mod h1:P2hknaGrziOJJKySv/XnAiVw/d
 github.com/beyondstorage/go-integration-test/v4 v4.2.0/go.mod h1:jLyYWSGUjQRH7U1HdaLbXE5sxBgqrtK73q+Q7PGIuSs=
 github.com/beyondstorage/go-integration-test/v4 v4.3.0/go.mod h1:HKgzemQZpxoHBL49JYEUnLTb5eteUhzcvmmPL7EDT/Y=
 github.com/beyondstorage/go-integration-test/v4 v4.4.0/go.mod h1:o0pHhyaRR/OO6QxnRqWW3aFjTycBZjoKSdHKN/JZRjo=
-github.com/beyondstorage/go-service-fs/v3 v3.3.0 h1:VOFdcshI4M1ovPbfwBpSdTp2CkzvdDKT6F70WQRdp4A=
-github.com/beyondstorage/go-service-fs/v3 v3.3.0/go.mod h1:/keWarsnGKz219wMyGN57OM7s5BUIZ/YlK9LhsXMwtQ=
 github.com/beyondstorage/go-service-fs/v3 v3.4.0 h1:stf8D8I/YZTIlzG7yHmm9Vc89pmS5nX4FzoCZE14pOI=
 github.com/beyondstorage/go-service-fs/v3 v3.4.0/go.mod h1:aVsiIUlcG8skmQwJyELv7XOEFyh3U/tgp7rGgQMIw5o=
 github.com/beyondstorage/go-service-memory v0.3.0 h1:T5d+oJXs4WPp5qTDwbNk23SZfsNURPONJUvp9W0r9+Y=
