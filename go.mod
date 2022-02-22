@@ -11,7 +11,7 @@ require (
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/hanwen/go-fuse/v2 v2.1.0
-	github.com/panjf2000/ants/v2 v2.4.7
+	github.com/panjf2000/ants/v2 v2.4.8
 	github.com/tinylib/msgp v1.1.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
